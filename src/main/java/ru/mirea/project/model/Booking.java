@@ -1,4 +1,4 @@
 package ru.mirea.project.model;
 
-public class Material {
+public class Booking {
 }
