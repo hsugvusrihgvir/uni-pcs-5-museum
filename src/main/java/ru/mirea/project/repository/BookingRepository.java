@@ -146,7 +146,7 @@ public class BookingRepository {
 
     // 3. Поиск бронирований
     // 3.1 Поиск по ID посетителя
-    public List<Booking> findByVisitorId(long visitorId) {
+    public List<Booking> searchByVisitorId(long visitorId) {
         // SELECT * FROM bookings WHERE visitor_id = ?
         return new ArrayList<>();
     }
@@ -184,7 +184,7 @@ public class BookingRepository {
     }
 
     // 6. Статистика: 
-    
+
     public long countAll() {
         // SELECT COUNT(*) FROM bookings
         return 0;
