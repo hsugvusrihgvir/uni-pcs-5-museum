@@ -1,26 +1,31 @@
 package ru.mirea.project.util;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import io.github.cdimascio.dotenv.Dotenv;
 
 public class DatabaseManager {
-    // final по типу const
-    // static - объект принажлежит самому классу а не объекту
+
     private static final Dotenv dotenv = Dotenv.load();
-    private static final String URL = dotenv.get("DB_URL");
+    
+    // раздельные части данных из .env
+    private static final String HOST = dotenv.get("DB_HOST");
+    private static final String PORT = dotenv.get("DB_PORT");
+    private static final String NAME = dotenv.get("DB_NAME");
+    
     private static final String USER = dotenv.get("DB_USER");
     private static final String PASSWORD = dotenv.get("DB_PASSWORD");
 
-    // private в конструкторе чтобы нльзя было создать объект извне
-    private DatabaseManager(){
-    }
-    // Connection представляет открытое соединение с базой данных
-    public static Connection getConnection() throws SQLException{
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+    private DatabaseManager() {
     }
 
+    // создает и возвращает подключение, динамически склеивая URL
+    public static Connection getConnection() throws SQLException {
+        // jdbc:postgresql://хост:порт/имя_базы
+        String url = String.format("jdbc:postgresql://%s:%s/%s", HOST, PORT, NAME);
+        
+        return DriverManager.getConnection(url, USER, PASSWORD);
+    }
 }
