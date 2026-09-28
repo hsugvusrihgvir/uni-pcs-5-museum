@@ -103,9 +103,6 @@ public Optional<Exhibition> findById(long id)
 public boolean existsById(long id)
 - SELECT 1 FROM exhibitions WHERE id = ?
 
-public List<Long> searchIdsByTitle(String title)
-- SELECT id FROM exhibitions WHERE LOWER(title) LIKE LOWER(?)
-
 ### 3. service/ExhibitionService.java
 
 public Exhibition getExhibitionById(long id)
@@ -113,9 +110,6 @@ public Exhibition getExhibitionById(long id)
 
 public boolean existsById(long id)
 - return exhibitionRepository.existsById(id); это всё
-
-public List<Long> getExhibitionIdsByTitle(String title)
-- метод-транслятор, принимает поисковую строку, переводит её в нижний регистр и запрашивает список ИД у своего репо
 
 ## Модуль Бронирования
 ### 1. model/Booking.java + model/BookingStatus.java
