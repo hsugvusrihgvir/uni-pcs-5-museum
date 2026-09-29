@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS employee_exhibitions CASCADE;
+DROP TABLE IF EXISTS booking CASCADE;
 DROP TABLE IF EXISTS visits CASCADE;
 DROP TABLE IF EXISTS artwork_exhibitions CASCADE;
 DROP TABLE IF EXISTS photos CASCADE;
@@ -12,6 +13,7 @@ DROP TABLE IF EXISTS artworks CASCADE;
 DROP TABLE IF EXISTS authors CASCADE;
 
 DROP TYPE IF EXISTS employee_position CASCADE;
+DROP TYPE IF EXISTS booking_status CASCADE;
 DROP TYPE IF EXISTS artwork_status CASCADE;
 DROP TYPE IF EXISTS artwork_type CASCADE;
 
@@ -39,6 +41,13 @@ CREATE TYPE employee_position AS ENUM (
     'KEEPER',
     'SECURITY',
     'TECHNICIAN'
+);
+
+CREATE TYPE booking_status AS ENUM (
+    'CREATED',
+    'CONFIRMED',
+    'COMPLETED',
+    'CANCELLED'
 );
 
 
@@ -250,13 +259,15 @@ CREATE UNIQUE INDEX uq_photos_one_main_per_artwork
 
 
 
-CREATE TABLE visits (
+CREATE TABLE booking (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 
     id_visitor BIGINT NOT NULL,
     id_exhibition BIGINT NOT NULL,
 
     visit_date DATE NOT NULL,
+    status booking_status NOT NULL,
+    price DOUBLE PRECISION,
 
     FOREIGN KEY (id_visitor)
         REFERENCES visitor(id)
@@ -287,12 +298,12 @@ CREATE INDEX idx_exhibitions_title
 CREATE INDEX idx_photos_artwork
     ON photos(id_artwork);
 
--- посещения
-CREATE INDEX idx_visits_visitor
-    ON visits(id_visitor);
+-- бронирования
+CREATE INDEX idx_booking_visitor
+    ON booking(id_visitor);
 
-CREATE INDEX idx_visits_exhibition
-    ON visits(id_exhibition);
+CREATE INDEX idx_booking_exhibition
+    ON booking(id_exhibition);
 
 -- все произведения конкретного автора
 CREATE INDEX idx_artwork_authors_artwork

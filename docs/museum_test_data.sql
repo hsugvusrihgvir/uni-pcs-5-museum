@@ -1,6 +1,6 @@
 TRUNCATE TABLE
     employee_exhibitions,
-    visits,
+    booking,
     artwork_exhibitions,
     photos,
     artwork_materials,
@@ -299,23 +299,23 @@ VALUES
 
 
 
--- ПОСЕЩЕНИЯ
+-- БРОНИРОВАНИЯ
 
 
-INSERT INTO visits (id_visitor, id_exhibition, visit_date)
+INSERT INTO booking (id_visitor, id_exhibition, visit_date, status, price)
 VALUES
-    (1, 1, '2026-09-03'),
-    (2, 1, '2026-09-06'),
-    (3, 1, '2026-09-12'),
+    (1, 1, '2026-09-03', 'COMPLETED', 500.00),
+    (2, 1, '2026-09-06', 'COMPLETED', 500.00),
+    (3, 1, '2026-09-12', 'CANCELLED', NULL),
 
-    (4, 2, '2026-09-10'),
-    (5, 2, '2026-09-14'),
-    (1, 2, '2026-09-15'),
+    (4, 2, '2026-09-10', 'COMPLETED', 700.00),
+    (5, 2, '2026-09-14', 'COMPLETED', 700.00),
+    (1, 2, '2026-09-15', 'CANCELLED', NULL),
 
-    (2, 4, '2026-09-12'),
-    (3, 4, '2026-09-14'),
-    (4, 4, '2026-09-15'),
-    (5, 4, '2026-09-15');
+    (2, 4, '2026-09-12', 'COMPLETED', 600.00),
+    (3, 4, '2026-09-14', 'CONFIRMED', 600.00),
+    (4, 4, '2026-09-15', 'CREATED', NULL),
+    (5, 4, '2026-09-15', 'CONFIRMED', 600.00);
 
 
 
