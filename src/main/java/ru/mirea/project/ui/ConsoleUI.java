@@ -1,27 +1,33 @@
 package ru.mirea.project.ui;
+import ru.mirea.project.model.Booking;
+import ru.mirea.project.service.BookingService;
+import ru.mirea.project.repository.BookingRepository;
 
 import java.util.Scanner;
 
 public class ConsoleUI {
     // чтобы только один объект мог быть
     private static final ConsoleUI INSTANCE = new ConsoleUI();
-
-    // final - как const почти
     // System.in - это стандартный поток ввода (из консоли)
     private final Scanner scanner = new Scanner(System.in);
 
-    public void start(){
-        showMenu();
-    }
+    // СЕРВИСЫ
+    private final BookingService bookingService = new BookingService(new BookingRepository());
 
+    // КОНСТРУКТОР
     // чтобы только один объект мог быть
+    private ConsoleUI(){}
+
     public static ConsoleUI getInstance() {
         return INSTANCE;
     }
 
-    private ConsoleUI(){}
+    // старт работы приложения
+    public void start(){
+        showMenu();
+    }
 
-
+    // МЕТОДЫ ДЛЯ ВЫВОДА
     // вывод как в питоне чтобы #evil
     // args - массив
     // Object - общий родитель почти всех объектов в Java
@@ -35,6 +41,7 @@ public class ConsoleUI {
         System.out.println();
     }
 
+    // МЕТОДЫ ДЛЯ ЧТЕНИЯ
     // метод для норм чтения чисел менюшных
     private int choiceReader(int minNumber, int maxNumber){
         while (true) {
@@ -56,6 +63,19 @@ public class ConsoleUI {
         }
     }
 
+    private long idReader(String objectName){
+        while (true) {
+            try {
+                print("Пожалуйста, введите id нужного вам " + objectName + ":");
+                long id = Long.parseLong(scanner.nextLine().trim());
+                return id;
+            } catch (NumberFormatException e) {
+                print("id " + objectName + " это целое число.");
+            }
+        }
+    }
+
+    // МЕТОДЫ ДЛЯ МЕНЮ
     // вывод меню
     private void showMenu(){
         while (true) {
@@ -141,8 +161,11 @@ public class ConsoleUI {
                 case 2 -> {
                     print("показываем все бронирования");
                 }
+
                 case 3 -> {
-                    print("получаем бронирование по ID");
+                    long bookindID = idReader("бронирования");
+                    Booking booking = bookingService.getBookingById(bookindID);
+                    print(booking.toString());
                 }
                 case 4 -> {
                     print("изменяем бронирование");
