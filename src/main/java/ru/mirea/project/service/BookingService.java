@@ -163,6 +163,11 @@ public class BookingService {
         long cancelled = bookingRepository.countByStatus(BookingStatus.CANCELLED);
         double money = bookingRepository.sumPriceForCompleted();
 
-        // ...
+        System.out.println("=== Статистика по бронированиям ===");
+        System.out.println("Всего бронирований: " + totalBookings);
+        System.out.println("Завершённых (COMPLETED): " + completed);
+        System.out.println("Отменённых (CANCELLED): " + cancelled);
+        System.out.println("Выручка по завершённым: " + money);
+        System.out.println("==================================");
     }
 }

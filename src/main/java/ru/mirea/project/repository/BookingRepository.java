@@ -147,56 +147,186 @@ public class BookingRepository {
     // 3. Поиск бронирований
     // 3.1 Поиск по ID посетителя
     public List<Booking> searchByVisitorId(long visitorId) {
-        // SELECT * FROM bookings WHERE visitor_id = ?
-        return new ArrayList<>();
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
+                   + "FROM bookings WHERE visitor_id = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setLong(1, visitorId);
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    bookings.add(mapResultSetToBooking(resultSet));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to search bookings by visitor id", e);
+        }
+        return bookings;
     }
 
     // 3.2 Поиск по названию выставки
     public List<Booking> searchByExhibitionTitle(String title) {
-        // SELECT b.* FROM bookings b JOIN exhibitions e ... WHERE e.title LIKE ?
-        return new ArrayList<>();
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT b.id, b.visitor_id, b.exhibition_id, b.visit_date, b.status, b.price "
+                   + "FROM bookings b "
+                   + "JOIN exhibitions e ON b.exhibition_id = e.id "
+                   + "WHERE e.title LIKE ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, "%" + title + "%");
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    bookings.add(mapResultSetToBooking(resultSet));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to search bookings by exhibition title", e);
+        }
+        return bookings;
     }
 
     // 4. Фильтрация
     // 4.1 Фильтр по статусу 
     public List<Booking> findByStatus(BookingStatus status) {
-        // SELECT * FROM bookings WHERE status = ?
-        return new ArrayList<>();
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
+                   + "FROM bookings WHERE status = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, status.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    bookings.add(mapResultSetToBooking(resultSet));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to filter bookings by status", e);
+        }
+        return bookings;
     }
 
     // 4.2 Фильтр по диапазону дат
     public List<Booking> findByDateRange(LocalDate start, LocalDate end) {
-        // SELECT * FROM bookings WHERE visit_date BETWEEN ? AND ?
-        return new ArrayList<>();
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
+                   + "FROM bookings WHERE visit_date BETWEEN ? AND ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setDate(1, Date.valueOf(start));
+            statement.setDate(2, Date.valueOf(end));
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    bookings.add(mapResultSetToBooking(resultSet));
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to filter bookings by date range", e);
+        }
+        return bookings;
     }
 
     // 5. Сортировка
     // 5.1 Сортировка по дате (сначала новые)
     public List<Booking> findAllSortedByDateNewestFirst() {
-        // SELECT * FROM bookings ORDER BY visit_date DESC
-        return new ArrayList<>();
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
+                   + "FROM bookings ORDER BY visit_date DESC";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                bookings.add(mapResultSetToBooking(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to retrieve bookings sorted by date", e);
+        }
+        return bookings;
     }
 
     // 5.2 Сортировка по цене (сначала дорогие)
     public List<Booking> findAllSortedByPriceExpensiveFirst() {
-        // SELECT * FROM bookings ORDER BY price DESC
-        return new ArrayList<>();
+        List<Booking> bookings = new ArrayList<>();
+        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
+                   + "FROM bookings ORDER BY price DESC NULLS LAST";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                bookings.add(mapResultSetToBooking(resultSet));
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to retrieve bookings sorted by price", e);
+        }
+        return bookings;
     }
 
     // 6. Статистика: 
 
     public long countAll() {
-        // SELECT COUNT(*) FROM bookings
+        String sql = "SELECT COUNT(*) FROM bookings";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            if (resultSet.next()) {
+                return resultSet.getLong(1);
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to count bookings", e);
+        }
         return 0;
     }
 
     public long countByStatus(BookingStatus status) {
-        // SELECT COUNT(*) FROM bookings WHERE status = ?
+        String sql = "SELECT COUNT(*) FROM bookings WHERE status = ?";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, status.name());
+
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getLong(1);
+                }
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to count bookings by status", e);
+        }
         return 0;
     }
 
     public double sumPriceForCompleted() {
-        // SELECT SUM(price) FROM bookings WHERE status = 'COMPLETED'
+        String sql = "SELECT SUM(price) FROM bookings WHERE status = 'COMPLETED'";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            if (resultSet.next()) {
+                double sum = resultSet.getDouble(1);
+                return resultSet.wasNull() ? 0.0 : sum;
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to sum price for completed bookings", e);
+        }
         return 0.0;
     }
 }
