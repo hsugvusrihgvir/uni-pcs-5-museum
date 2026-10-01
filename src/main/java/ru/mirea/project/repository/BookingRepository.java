@@ -196,7 +196,7 @@ public class BookingRepository {
     public List<Booking> findByStatus(BookingStatus status) {
         List<Booking> bookings = new ArrayList<>();
         String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price "
-                   + "FROM booking WHERE status = ?";
+                   + "FROM booking WHERE status = ?::booking_status";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -295,10 +295,10 @@ public class BookingRepository {
     }
 
     public long countByStatus(BookingStatus status) {
-        String sql = "SELECT COUNT(*) FROM booking WHERE status = ?";
+        String sql = "SELECT COUNT(*) FROM booking WHERE status = ?::booking_status";
 
         try (Connection connection = DatabaseManager.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
 
             statement.setString(1, status.name());
 
