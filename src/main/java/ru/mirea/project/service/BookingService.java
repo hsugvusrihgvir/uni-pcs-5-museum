@@ -51,7 +51,11 @@ public class BookingService {
         booking.setVisitDate(visitDate);
 
         // Правило 5 (Авто-статус при создании)
-        if (inputPrice != null && inputPrice > 0) {
+        if (inputPrice != null && inputPrice <= 0) {
+            throw new BusinessException("Ошибка: Цена билета должна быть положительным числом!");
+        }
+
+        if (inputPrice != null) {
             booking.setStatus(BookingStatus.CONFIRMED); // подтвержден сразу
             booking.setPrice(inputPrice);
         } else {
