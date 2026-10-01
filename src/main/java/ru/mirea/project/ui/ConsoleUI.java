@@ -231,10 +231,16 @@ public class ConsoleUI {
                         print(visitor.toString());
                     } catch (BusinessException e) {
                         print(e.getMessage());
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
                     }
                 }
                 case 2 -> {
-                    printList(visitorService.getAllVisitors(), "Посетители не найдены.");
+                    try {
+                        printList(visitorService.getAllVisitors(), "Посетители не найдены.");
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 0 -> {
                     print("Возвращаемся...");
@@ -444,7 +450,11 @@ public class ConsoleUI {
 
 
     private void statisticsMenu() {
-        print("Всего клиентов в системе: %d", visitorService.getAllVisitors().size());
+        try {
+            print("Всего клиентов в системе: %d", visitorService.getAllVisitors().size());
+        } catch (IllegalStateException e) {
+            print(e.getMessage());
+        }
         bookingService.printStatistics();
     }
 
@@ -470,10 +480,14 @@ public class ConsoleUI {
                     );
                 }
                 case 2 -> {
-                    printList(
-                            visitorService.getAllVisitors(),
-                            "Посетители не найдены."
-                    );
+                    try {
+                        printList(
+                                visitorService.getAllVisitors(),
+                                "Посетители не найдены."
+                        );
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 3 -> {
                     printList(

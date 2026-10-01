@@ -61,15 +61,21 @@ public class VisitorRepository {
              PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             mapVisitorToStatement(statement, visitor);
-            statement.executeUpdate();
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows == 0) {
+                throw new IllegalStateException("Посетитель не был сохранён.");
+            }
 
             try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                 if (generatedKeys.next()) {
                     visitor.setId(generatedKeys.getLong(1));
+                } else {
+                    throw new IllegalStateException("База данных не вернула ID созданного посетителя.");
                 }
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to save visitor", e);
+            throw new IllegalStateException("Не удалось сохранить посетителя в базе данных.", e);
         }
         return visitor;
     }
@@ -88,6 +94,7 @@ public class VisitorRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to find all visitors", e);
+            throw new IllegalStateException("Не удалось получить список посетителей из базы данных.", e);
         }
         return visitors;
     }
@@ -104,7 +111,7 @@ public class VisitorRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to check existence of visitor by id", e);
-            return false;
+            throw new IllegalStateException("Не удалось проверить существование посетителя в базе данных.", e);
         }
     }
 }
