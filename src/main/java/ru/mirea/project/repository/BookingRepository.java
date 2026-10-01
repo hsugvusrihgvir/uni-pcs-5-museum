@@ -40,8 +40,8 @@ public class BookingRepository {
     private Booking mapResultSetToBooking(ResultSet resultSet) throws SQLException {
         Booking booking = new Booking();
         booking.setId(resultSet.getLong("id"));
-        booking.setVisitorId(resultSet.getLong("visitor_id"));
-        booking.setExhibitionId(resultSet.getLong("exhibition_id"));
+        booking.setVisitorId(resultSet.getLong("id_visitor"));
+        booking.setExhibitionId(resultSet.getLong("id_exhibition"));
         booking.setVisitDate(resultSet.getDate("visit_date").toLocalDate());
         booking.setStatus(BookingStatus.valueOf(resultSet.getString("status")));
         
@@ -50,15 +50,15 @@ public class BookingRepository {
         return booking;
     }
 
-    // === CRUD методы для работы с bookings в постгресе ===
+    // === CRUD методы для работы с booking в постгресе ===
 
     // 2.1: сохранение нового бронирования 
     // 2.4: изменение существующего
     public Booking save(Booking booking) {
         boolean isNew = (booking.getId() == 0);
         String sql = isNew 
-            ? "INSERT INTO bookings (visitor_id, exhibition_id, visit_date, status, price) VALUES (?, ?, ?, ?, ?)"
-            : "UPDATE bookings SET visitor_id = ?, exhibition_id = ?, visit_date = ?, status = ?, price = ? WHERE id = ?";
+            ? "INSERT INTO booking (id_visitor, id_exhibition, visit_date, status, price) VALUES (?, ?, ?, ?, ?)"
+            : "UPDATE booking SET id_visitor = ?, id_exhibition = ?, visit_date = ?, status = ?, price = ? WHERE id = ?";
             
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, isNew ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS)) {
@@ -87,10 +87,10 @@ public class BookingRepository {
         return booking;
     }
 
-    // 2.2: вывод всех бронирований из bookings
+    // 2.2: вывод всех бронирований из booking
     public List<Booking> findAll() {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price FROM bookings";
+        String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price FROM booking";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
@@ -108,7 +108,7 @@ public class BookingRepository {
 
     //2.3: gолучение бронирования по id
     public Optional<Booking> findById(long id) {
-        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price FROM bookings WHERE id = ?";
+        String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price FROM booking WHERE id = ?";
 
         // try-with-resources автоматически закроет connection, statement и resultSet
         try (Connection connection = DatabaseManager.getConnection();
@@ -128,9 +128,9 @@ public class BookingRepository {
         return Optional.empty();
     }
 
-    //2.5: удаление строки из bookings по id
+    //2.5: удаление строки из booking по id
     public boolean deleteById(long id) {
-        String sql = "DELETE FROM bookings WHERE id = ?";
+        String sql = "DELETE FROM booking WHERE id = ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -148,8 +148,8 @@ public class BookingRepository {
     // 3.1 Поиск по ID посетителя
     public List<Booking> searchByVisitorId(long visitorId) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
-                   + "FROM bookings WHERE visitor_id = ?";
+        String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price "
+                   + "FROM booking WHERE id_visitor = ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -170,9 +170,9 @@ public class BookingRepository {
     // 3.2 Поиск по названию выставки
     public List<Booking> searchByExhibitionTitle(String title) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT b.id, b.visitor_id, b.exhibition_id, b.visit_date, b.status, b.price "
-                   + "FROM bookings b "
-                   + "JOIN exhibitions e ON b.exhibition_id = e.id "
+        String sql = "SELECT b.id, b.id_visitor, b.id_exhibition, b.visit_date, b.status, b.price "
+                   + "FROM booking b "
+                   + "JOIN exhibitions e ON b.id_exhibition = e.id "
                    + "WHERE e.title LIKE ?";
 
         try (Connection connection = DatabaseManager.getConnection();
@@ -195,8 +195,8 @@ public class BookingRepository {
     // 4.1 Фильтр по статусу 
     public List<Booking> findByStatus(BookingStatus status) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
-                   + "FROM bookings WHERE status = ?";
+        String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price "
+                   + "FROM booking WHERE status = ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -217,8 +217,8 @@ public class BookingRepository {
     // 4.2 Фильтр по диапазону дат
     public List<Booking> findByDateRange(LocalDate start, LocalDate end) {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
-                   + "FROM bookings WHERE visit_date BETWEEN ? AND ?";
+        String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price "
+                   + "FROM booking WHERE visit_date BETWEEN ? AND ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -241,8 +241,8 @@ public class BookingRepository {
     // 5.1 Сортировка по дате (сначала новые)
     public List<Booking> findAllSortedByDateNewestFirst() {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
-                   + "FROM bookings ORDER BY visit_date DESC";
+        String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price "
+                   + "FROM booking ORDER BY visit_date DESC";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
@@ -260,8 +260,8 @@ public class BookingRepository {
     // 5.2 Сортировка по цене (сначала дорогие)
     public List<Booking> findAllSortedByPriceExpensiveFirst() {
         List<Booking> bookings = new ArrayList<>();
-        String sql = "SELECT id, visitor_id, exhibition_id, visit_date, status, price "
-                   + "FROM bookings ORDER BY price DESC NULLS LAST";
+        String sql = "SELECT id, id_visitor, id_exhibition, visit_date, status, price "
+                   + "FROM booking ORDER BY price DESC NULLS LAST";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
@@ -279,7 +279,7 @@ public class BookingRepository {
     // 6. Статистика: 
 
     public long countAll() {
-        String sql = "SELECT COUNT(*) FROM bookings";
+        String sql = "SELECT COUNT(*) FROM booking";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
@@ -295,7 +295,7 @@ public class BookingRepository {
     }
 
     public long countByStatus(BookingStatus status) {
-        String sql = "SELECT COUNT(*) FROM bookings WHERE status = ?";
+        String sql = "SELECT COUNT(*) FROM booking WHERE status = ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -314,7 +314,7 @@ public class BookingRepository {
     }
 
     public double sumPriceForCompleted() {
-        String sql = "SELECT SUM(price) FROM bookings WHERE status = 'COMPLETED'";
+        String sql = "SELECT SUM(price) FROM booking WHERE status = 'COMPLETED'";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
