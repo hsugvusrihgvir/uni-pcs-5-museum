@@ -71,18 +71,24 @@ public class BookingRepository {
                 statement.setLong(6, booking.getId());
             }
             
-            statement.executeUpdate();
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows == 0) {
+                throw new IllegalStateException("Бронирование не было сохранено.");
+            }
             
             // запись новая, забираем созданный базой ид
             if (isNew) {
                 try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
                     if (generatedKeys.next()) {
                         booking.setId(generatedKeys.getLong(1));
+                    } else {
+                        throw new IllegalStateException("База данных не вернула ID созданного бронирования.");
                     }
                 }
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to save/update booking", e);
+            throw new IllegalStateException("Не удалось сохранить бронирование в базе данных.", e);
         }
         return booking;
     }
@@ -102,6 +108,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to retrieve all bookings", e);
+            throw new IllegalStateException("Не удалось получить список бронирований из базы данных.", e);
         }
         return bookings;
     }
@@ -124,6 +131,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to find booking by id", e);
+            throw new IllegalStateException("Не удалось получить бронирование из базы данных.", e);
         }
         return Optional.empty();
     }
@@ -140,7 +148,7 @@ public class BookingRepository {
             
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to delete booking by id", e);
-            return false;
+            throw new IllegalStateException("Не удалось удалить бронирование из базы данных.", e);
         }
     }
 
@@ -163,6 +171,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to search bookings by visitor id", e);
+            throw new IllegalStateException("Не удалось найти бронирования посетителя в базе данных.", e);
         }
         return bookings;
     }
@@ -187,6 +196,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to search bookings by exhibition title", e);
+            throw new IllegalStateException("Не удалось найти бронирования по названию выставки.", e);
         }
         return bookings;
     }
@@ -210,6 +220,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to filter bookings by status", e);
+            throw new IllegalStateException("Не удалось отфильтровать бронирования по статусу.", e);
         }
         return bookings;
     }
@@ -233,6 +244,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to filter bookings by date range", e);
+            throw new IllegalStateException("Не удалось отфильтровать бронирования по диапазону дат.", e);
         }
         return bookings;
     }
@@ -253,6 +265,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to retrieve bookings sorted by date", e);
+            throw new IllegalStateException("Не удалось получить бронирования, отсортированные по дате.", e);
         }
         return bookings;
     }
@@ -272,6 +285,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to retrieve bookings sorted by price", e);
+            throw new IllegalStateException("Не удалось получить бронирования, отсортированные по цене.", e);
         }
         return bookings;
     }
@@ -290,6 +304,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to count bookings", e);
+            throw new IllegalStateException("Не удалось получить количество бронирований.", e);
         }
         return 0;
     }
@@ -309,6 +324,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to count bookings by status", e);
+            throw new IllegalStateException("Не удалось получить количество бронирований по статусу.", e);
         }
         return 0;
     }
@@ -326,6 +342,7 @@ public class BookingRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to sum price for completed bookings", e);
+            throw new IllegalStateException("Не удалось получить сумму завершённых бронирований.", e);
         }
         return 0.0;
     }

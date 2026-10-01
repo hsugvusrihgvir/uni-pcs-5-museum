@@ -54,17 +54,23 @@ public class ExhibitionRepository {
                 statement.setLong(7, exhibition.getId());
             }
 
-            statement.executeUpdate();
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows == 0) {
+                throw new IllegalStateException("Выставка не была сохранена.");
+            }
 
             if (isNew) {
                 try (ResultSet keys = statement.getGeneratedKeys()) {
                     if (keys.next()) {
                         exhibition.setId(keys.getLong(1));
+                    } else {
+                        throw new IllegalStateException("База данных не вернула ID созданной выставки.");
                     }
                 }
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to save/update exhibition", e);
+            throw new IllegalStateException("Не удалось сохранить выставку в базе данных.", e);
         }
         return exhibition;
     }
@@ -83,6 +89,7 @@ public class ExhibitionRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to find exhibition by id", e);
+            throw new IllegalStateException("Не удалось получить выставку из базы данных.", e);
         }
         return Optional.empty();
     }
@@ -100,6 +107,7 @@ public class ExhibitionRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to find all exhibitions", e);
+            throw new IllegalStateException("Не удалось получить список выставок из базы данных.", e);
         }
         return list;
     }
@@ -112,7 +120,7 @@ public class ExhibitionRepository {
             return statement.executeUpdate() > 0;
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to delete exhibition by id", e);
-            return false;
+            throw new IllegalStateException("Не удалось удалить выставку из базы данных.", e);
         }
     }
 
@@ -127,7 +135,7 @@ public class ExhibitionRepository {
             }
         } catch (SQLException e) {
             LOGGER.log(Level.SEVERE, "Failed to check existence of exhibition by id", e);
-            return false;
+            throw new IllegalStateException("Не удалось проверить существование выставки в базе данных.", e);
         }
     }
 }
