@@ -23,7 +23,7 @@ public class Visitor {
                    String email,
                    String password_hash) {
         this.name = name;
-        this.last_mame = last_name;
+        this.last_name = last_name;
         this.patronymic = patronymic;
         this.birth_date = birth_date;
         this.email = email;
@@ -40,7 +40,7 @@ public class Visitor {
                    String password_hash) {
         this.id = id;
         this.name = name;
-        this.last_mame = last_name;
+        this.last_name = last_name;
         this.patronymic = patronymic;
         this.birth_date = birth_date;
         this.email = email;
@@ -103,7 +103,20 @@ public class Visitor {
         this.password_hash = password_hash;
     }
 
-    // дописать метод для вывода в консоль
+    public String getFullName() {
+        if (patronymic == null || patronymic.trim().isEmpty()) {
+            return last_name + " " + name;
+        }
+        return last_name + " " + name + " " + patronymic;
+    }
 
-
+    @Override
+    public String toString() {
+        return "Visitor{" +
+                "id=" + id +
+                ", fullName='" + getFullName() + '\'' +
+                ", birthDate=" + birth_date +
+                ", email='" + email + '\'' +
+                '}';
+    }
 }
