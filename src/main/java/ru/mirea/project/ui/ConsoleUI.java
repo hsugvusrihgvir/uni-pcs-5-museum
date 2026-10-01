@@ -1,10 +1,20 @@
 package ru.mirea.project.ui;
+
+import ru.mirea.project.exception.BusinessException;
+import ru.mirea.project.exception.EntityNotFoundException;
 import ru.mirea.project.model.Booking;
+import ru.mirea.project.model.BookingStatus;
+import ru.mirea.project.model.Visitor;
 import ru.mirea.project.service.BookingService;
 import ru.mirea.project.service.ExhibitionService;
+import ru.mirea.project.service.VisitorService;
 import ru.mirea.project.repository.BookingRepository;
 import ru.mirea.project.repository.ExhibitionRepository;
+import ru.mirea.project.repository.VisitorRepository;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 import java.util.Scanner;
 
 public class ConsoleUI {
@@ -15,10 +25,12 @@ public class ConsoleUI {
 
     private final BookingRepository bookingRepository = new BookingRepository();
     private final ExhibitionRepository exhibitionRepository = new ExhibitionRepository();
+    private final VisitorRepository visitorRepository = new VisitorRepository();
 
     // СЕРВИСЫ
     private final ExhibitionService exhibitionService = new ExhibitionService(exhibitionRepository);
     private final BookingService bookingService = new BookingService(bookingRepository, exhibitionService);
+    private final VisitorService visitorService = new VisitorService(visitorRepository);
 
     // КОНСТРУКТОР
     // чтобы только один объект мог быть
@@ -81,6 +93,69 @@ public class ConsoleUI {
         }
     }
 
+    private String textReader(String message) {
+        print(message);
+        return scanner.nextLine().trim();
+    }
+
+    private LocalDate dateReader(String message) {
+        while (true) {
+            try {
+                print(message + " (ГГГГ-ММ-ДД):");
+                return LocalDate.parse(scanner.nextLine().trim());
+            } catch (DateTimeParseException e) {
+                print("Пожалуйста, введите дату в формате ГГГГ-ММ-ДД.");
+            }
+        }
+    }
+
+    private LocalDate nullableDateReader(String message) {
+        while (true) {
+            try {
+                print(message + " (ГГГГ-ММ-ДД, Enter — не указывать):");
+                String value = scanner.nextLine().trim();
+                return value.isEmpty() ? null : LocalDate.parse(value);
+            } catch (DateTimeParseException e) {
+                print("Пожалуйста, введите дату в формате ГГГГ-ММ-ДД.");
+            }
+        }
+    }
+
+    private Double nullablePriceReader() {
+        while (true) {
+            try {
+                print("Введите цену (Enter — не указывать):");
+                String value = scanner.nextLine().trim();
+                return value.isEmpty() ? null : Double.parseDouble(value.replace(',', '.'));
+            } catch (NumberFormatException e) {
+                print("Пожалуйста, введите число или оставьте строку пустой.");
+            }
+        }
+    }
+
+    private BookingStatus bookingStatusReader() {
+        while (true) {
+            print("Введите статус (CREATED, CONFIRMED, COMPLETED, CANCELLED):");
+            String value = scanner.nextLine().trim().toUpperCase();
+            try {
+                return BookingStatus.valueOf(value);
+            } catch (IllegalArgumentException e) {
+                print("Такого статуса нет.");
+            }
+        }
+    }
+
+    private void printList(List<?> items, String emptyMessage) {
+        if (items.isEmpty()) {
+            print(emptyMessage);
+            return;
+        }
+
+        for (Object item : items) {
+            print(item.toString());
+        }
+    }
+
     // МЕТОДЫ ДЛЯ МЕНЮ
     // вывод меню
     private void showMenu(){
@@ -133,10 +208,33 @@ public class ConsoleUI {
             int c = choiceReader(0, 2);
             switch (c) {
                 case 1 -> {
-                    print("создаем посетителя");
+                    try {
+                        String name = textReader("Введите имя:");
+                        String lastName = textReader("Введите фамилию:");
+                        String patronymic = textReader("Введите отчество (Enter — не указывать):");
+                        if (patronymic.isEmpty()) {
+                            patronymic = null;
+                        }
+                        LocalDate birthDate = nullableDateReader("Введите дату рождения");
+                        String email = textReader("Введите email:");
+                        String passwordHash = textReader("Введите хеш пароля:");
+
+                        Visitor visitor = visitorService.createVisitor(
+                                name,
+                                lastName,
+                                patronymic,
+                                birthDate,
+                                email,
+                                passwordHash
+                        );
+                        print("Посетитель создан:");
+                        print(visitor.toString());
+                    } catch (BusinessException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 2 -> {
-                    print("показываем всех клиентов");
+                    printList(visitorService.getAllVisitors(), "Посетители не найдены.");
                 }
                 case 0 -> {
                     print("Возвращаемся...");
@@ -162,22 +260,61 @@ public class ConsoleUI {
             int c = choiceReader(0, 5);
             switch (c) {
                 case 1 -> {
-                    print("создаем бронирование");
+                    try {
+                        long visitorId = idReader("посетителя");
+                        long exhibitionId = idReader("выставки");
+                        LocalDate visitDate = dateReader("Введите дату посещения");
+                        Double price = nullablePriceReader();
+
+                        Booking booking = bookingService.createBooking(
+                                visitorId,
+                                exhibitionId,
+                                visitDate,
+                                price
+                        );
+                        print("Бронирование создано:");
+                        print(booking.toString());
+                    } catch (BusinessException | EntityNotFoundException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 2 -> {
-                    print("показываем все бронирования");
+                    printList(
+                            bookingService.getSortedBookings(1),
+                            "Бронирования не найдены."
+                    );
                 }
 
                 case 3 -> {
-                    long bookindID = idReader("бронирования");
-                    Booking booking = bookingService.getBookingById(bookindID);
-                    print(booking.toString());
+                    try {
+                        long bookingId = idReader("бронирования");
+                        Booking booking = bookingService.getBookingById(bookingId);
+                        print(booking.toString());
+                    } catch (EntityNotFoundException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 4 -> {
-                    print("изменяем бронирование");
+                    try {
+                        long bookingId = idReader("бронирования");
+                        BookingStatus status = bookingStatusReader();
+                        Double price = nullablePriceReader();
+
+                        Booking booking = bookingService.updateBooking(bookingId, status, price);
+                        print("Бронирование изменено:");
+                        print(booking.toString());
+                    } catch (BusinessException | EntityNotFoundException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 5 -> {
-                    print("удаляем бронирование");
+                    try {
+                        long bookingId = idReader("бронирования");
+                        bookingService.deleteBooking(bookingId);
+                        print("Бронирование удалено.");
+                    } catch (EntityNotFoundException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 0 -> {
                     print("Возвращаемся...");
@@ -201,10 +338,26 @@ public class ConsoleUI {
 
             switch (c) {
                 case 1 -> {
-                    print("ищем бронирования по ID посетителя");
+                    try {
+                        long visitorId = idReader("посетителя");
+                        printList(
+                                bookingService.getBookingsByVisitorId(visitorId),
+                                "Бронирования не найдены."
+                        );
+                    } catch (BusinessException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 2 -> {
-                    print("ищем бронирования по названию выставки");
+                    try {
+                        String title = textReader("Введите название выставки:");
+                        printList(
+                                bookingService.getBookingsByExhibitionTitle(title),
+                                "Бронирования не найдены."
+                        );
+                    } catch (BusinessException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 0 -> {
                     print("Возвращаемся...");
@@ -229,10 +382,23 @@ public class ConsoleUI {
 
             switch (c) {
                 case 1 -> {
-                    print("фильтруем бронирования по статусу");
+                    BookingStatus status = bookingStatusReader();
+                    printList(
+                            bookingService.filterBookingsByStatus(status),
+                            "Бронирования не найдены."
+                    );
                 }
                 case 2 -> {
-                    print("фильтруем бронирования по диапазону дат");
+                    try {
+                        LocalDate start = dateReader("Введите начало диапазона");
+                        LocalDate end = dateReader("Введите конец диапазона");
+                        printList(
+                                bookingService.filterBookingsByDateRange(start, end),
+                                "Бронирования не найдены."
+                        );
+                    } catch (BusinessException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 0 -> {
                     print("Возвращаемся...");
@@ -257,10 +423,16 @@ public class ConsoleUI {
 
             switch (c) {
                 case 1 -> {
-                    print("сортируем бронирования по дате");
+                    printList(
+                            bookingService.getSortedBookings(1),
+                            "Бронирования не найдены."
+                    );
                 }
                 case 2 -> {
-                    print("сортируем бронирования по цене");
+                    printList(
+                            bookingService.getSortedBookings(2),
+                            "Бронирования не найдены."
+                    );
                 }
                 case 0 -> {
                     print("Возвращаемся...");
@@ -272,13 +444,8 @@ public class ConsoleUI {
 
 
     private void statisticsMenu() {
-        print("""
-            - Всего клиентов в системе
-            - Всего бронирований в базе данных
-            - Всего совершенных бронирований (COMPLETED)
-            - Всего отмененных бронирований (CANCELLED)
-            - Всего собрано денег (у COMPLETED)
-            """);
+        print("Всего клиентов в системе: %d", visitorService.getAllVisitors().size());
+        bookingService.printStatistics();
     }
 
 
@@ -297,13 +464,22 @@ public class ConsoleUI {
 
             switch (c) {
                 case 1 -> {
-                    print("выводим таблицу выставок");
+                    printList(
+                            exhibitionService.getAllExhibitions(),
+                            "Выставки не найдены."
+                    );
                 }
                 case 2 -> {
-                    print("выводим таблицу посетителей");
+                    printList(
+                            visitorService.getAllVisitors(),
+                            "Посетители не найдены."
+                    );
                 }
                 case 3 -> {
-                    print("выводим таблицу бронирований");
+                    printList(
+                            bookingService.getSortedBookings(1),
+                            "Бронирования не найдены."
+                    );
                 }
                 case 0 -> {
                     print("Возвращаемся...");
