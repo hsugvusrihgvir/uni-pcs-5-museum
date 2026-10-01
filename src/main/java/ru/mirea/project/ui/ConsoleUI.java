@@ -292,15 +292,19 @@ public class ConsoleUI {
                         );
                         print("Бронирование создано:");
                         print(booking.toString());
-                    } catch (BusinessException | EntityNotFoundException e) {
+                    } catch (BusinessException | EntityNotFoundException | IllegalStateException e) {
                         print(e.getMessage());
                     }
                 }
                 case 2 -> {
-                    printList(
-                            bookingService.getSortedBookings(1),
-                            "Бронирования не найдены."
-                    );
+                    try {
+                        printList(
+                                bookingService.getSortedBookings(1),
+                                "Бронирования не найдены."
+                        );
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
 
                 case 3 -> {
@@ -308,7 +312,7 @@ public class ConsoleUI {
                         long bookingId = idReader("бронирования");
                         Booking booking = bookingService.getBookingById(bookingId);
                         print(booking.toString());
-                    } catch (EntityNotFoundException e) {
+                    } catch (EntityNotFoundException | IllegalStateException e) {
                         print(e.getMessage());
                     }
                 }
@@ -321,7 +325,7 @@ public class ConsoleUI {
                         Booking booking = bookingService.updateBooking(bookingId, status, price);
                         print("Бронирование изменено:");
                         print(booking.toString());
-                    } catch (BusinessException | EntityNotFoundException e) {
+                    } catch (BusinessException | EntityNotFoundException | IllegalStateException e) {
                         print(e.getMessage());
                     }
                 }
@@ -330,7 +334,7 @@ public class ConsoleUI {
                         long bookingId = idReader("бронирования");
                         bookingService.deleteBooking(bookingId);
                         print("Бронирование удалено.");
-                    } catch (EntityNotFoundException e) {
+                    } catch (EntityNotFoundException | IllegalStateException e) {
                         print(e.getMessage());
                     }
                 }
@@ -362,7 +366,7 @@ public class ConsoleUI {
                                 bookingService.getBookingsByVisitorId(visitorId),
                                 "Бронирования не найдены."
                         );
-                    } catch (BusinessException e) {
+                    } catch (BusinessException | IllegalStateException e) {
                         print(e.getMessage());
                     }
                 }
@@ -373,7 +377,7 @@ public class ConsoleUI {
                                 bookingService.getBookingsByExhibitionTitle(title),
                                 "Бронирования не найдены."
                         );
-                    } catch (BusinessException e) {
+                    } catch (BusinessException | IllegalStateException e) {
                         print(e.getMessage());
                     }
                 }
@@ -400,11 +404,15 @@ public class ConsoleUI {
 
             switch (c) {
                 case 1 -> {
-                    BookingStatus status = bookingStatusReader();
-                    printList(
-                            bookingService.filterBookingsByStatus(status),
-                            "Бронирования не найдены."
-                    );
+                    try {
+                        BookingStatus status = bookingStatusReader();
+                        printList(
+                                bookingService.filterBookingsByStatus(status),
+                                "Бронирования не найдены."
+                        );
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 2 -> {
                     try {
@@ -414,7 +422,7 @@ public class ConsoleUI {
                                 bookingService.filterBookingsByDateRange(start, end),
                                 "Бронирования не найдены."
                         );
-                    } catch (BusinessException e) {
+                    } catch (BusinessException | IllegalStateException e) {
                         print(e.getMessage());
                     }
                 }
@@ -441,16 +449,24 @@ public class ConsoleUI {
 
             switch (c) {
                 case 1 -> {
-                    printList(
-                            bookingService.getSortedBookings(1),
-                            "Бронирования не найдены."
-                    );
+                    try {
+                        printList(
+                                bookingService.getSortedBookings(1),
+                                "Бронирования не найдены."
+                        );
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 2 -> {
-                    printList(
-                            bookingService.getSortedBookings(2),
-                            "Бронирования не найдены."
-                    );
+                    try {
+                        printList(
+                                bookingService.getSortedBookings(2),
+                                "Бронирования не найдены."
+                        );
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 0 -> {
                     print("Возвращаемся...");
@@ -467,7 +483,11 @@ public class ConsoleUI {
         } catch (IllegalStateException e) {
             print(e.getMessage());
         }
-        bookingService.printStatistics();
+        try {
+            bookingService.printStatistics();
+        } catch (IllegalStateException e) {
+            print(e.getMessage());
+        }
     }
 
 
@@ -486,10 +506,14 @@ public class ConsoleUI {
 
             switch (c) {
                 case 1 -> {
-                    printList(
-                            exhibitionService.getAllExhibitions(),
-                            "Выставки не найдены."
-                    );
+                    try {
+                        printList(
+                                exhibitionService.getAllExhibitions(),
+                                "Выставки не найдены."
+                        );
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 2 -> {
                     try {
@@ -502,10 +526,14 @@ public class ConsoleUI {
                     }
                 }
                 case 3 -> {
-                    printList(
-                            bookingService.getSortedBookings(1),
-                            "Бронирования не найдены."
-                    );
+                    try {
+                        printList(
+                                bookingService.getSortedBookings(1),
+                                "Бронирования не найдены."
+                        );
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 0 -> {
                     print("Возвращаемся...");
