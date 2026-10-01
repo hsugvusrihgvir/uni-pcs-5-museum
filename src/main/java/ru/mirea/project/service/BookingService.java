@@ -7,19 +7,20 @@ import ru.mirea.project.exception.BusinessException;
 import ru.mirea.project.exception.EntityNotFoundException;
 import ru.mirea.project.model.Booking;
 import ru.mirea.project.model.BookingStatus;
+import ru.mirea.project.model.Exhibition;
 import ru.mirea.project.repository.BookingRepository;
 
 public class BookingService {
 
     private final BookingRepository bookingRepository;
     //private final VisitorService visitorService; --- добавить потом
-    //private final ExhibitionService exhibitionService; --- добавить потом
+    private final ExhibitionService exhibitionService;
 
     // сервис принимает репозиторий для работы с базой данных
-    public BookingService(BookingRepository bookingRepository) {
+    public BookingService(BookingRepository bookingRepository, ExhibitionService exhibitionService) {
         this.bookingRepository = bookingRepository;
         //this.visitorService = visitorService; --- добавить потом
-        //this.exhibitionService = exhibitionService; --- добавить потом
+        this.exhibitionService = exhibitionService; 
     }
 
     // 2.1: Создание бронирования
@@ -28,35 +29,26 @@ public class BookingService {
         
         // Правило 1 (Существование сущности)
         
-        // !!! потом здесь добавятся проверки через visitorRepository и exhibitionRepository: !!!
+        if (!exhibitionService.existsById(exhibitionId)) {
+            throw new BusinessException("Ошибка: Выставка с ID " + exhibitionId + " не найдена в системе!");
+        }
+
+        // !!! потом здесь добавятся проверки через visitorRepository: !!!
         /*
         if (!visitorService.existsById(visitorId)) {
             throw new BusinessException("Ошибка: Посетитель с ID " + visitorId + " не существует в системе!");
         }
-        if (!exhibitionService.existsById(exhibitionId)) {
-            throw new BusinessException("Ошибка: Выставка с ID " + exhibitionId + " не найдена в системе!");
-        }
             вместо:
          */
-        if (visitorId <= 0 || exhibitionId <= 0) {
-            throw new BusinessException("Ошибка: Указан несуществующий ID посетителя или выставки!");
+        if (visitorId <= 0) {
+            throw new BusinessException("Ошибка: Указан несуществующий ID посетителя!");
         }
 
         // Правило 2 (Логика дат работы выставки)
-        // !!! временные рамки выставки на 2026 год. Позже даты будут запрашиваться из бд !!!
-        LocalDate exhibitionStart = LocalDate.of(2026, 1, 1);
-        LocalDate exhibitionEnd = LocalDate.of(2026, 12, 31);
-
-        /*
-        var exhibition = exhibitionService.getExhibitionById(exhibitionId);
+        Exhibition exhibition = exhibitionService.getExhibitionById(exhibitionId);
         if (visitDate.isBefore(exhibition.getStartDate()) || visitDate.isAfter(exhibition.getEndDate())) {
-            throw new BusinessException("Ошибка: Дата сеанса выходит за рамки работы выставки (" 
+            throw new BusinessException("Ошибка: Дата сеанса (" + visitDate + ") выходит за рамки работы выставки ("
                     + exhibition.getStartDate() + " - " + exhibition.getEndDate() + ")!");
-        }
-         */
-        
-        if (visitDate.isBefore(exhibitionStart) || visitDate.isAfter(exhibitionEnd)) {
-            throw new BusinessException("Ошибка: Дата сеанса (" + visitDate + ") выходит за рамки работы выставки!");
         }
 
         

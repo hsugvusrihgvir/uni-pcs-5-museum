@@ -1,7 +1,9 @@
 package ru.mirea.project.ui;
 import ru.mirea.project.model.Booking;
 import ru.mirea.project.service.BookingService;
+import ru.mirea.project.service.ExhibitionService;
 import ru.mirea.project.repository.BookingRepository;
+import ru.mirea.project.repository.ExhibitionRepository;
 
 import java.util.Scanner;
 
@@ -11,8 +13,12 @@ public class ConsoleUI {
     // System.in - это стандартный поток ввода (из консоли)
     private final Scanner scanner = new Scanner(System.in);
 
+    private final BookingRepository bookingRepository = new BookingRepository();
+    private final ExhibitionRepository exhibitionRepository = new ExhibitionRepository();
+
     // СЕРВИСЫ
-    private final BookingService bookingService = new BookingService(new BookingRepository());
+    private final ExhibitionService exhibitionService = new ExhibitionService(exhibitionRepository);
+    private final BookingService bookingService = new BookingService(bookingRepository, exhibitionService);
 
     // КОНСТРУКТОР
     // чтобы только один объект мог быть
