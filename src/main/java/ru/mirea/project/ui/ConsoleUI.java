@@ -11,7 +11,9 @@ import ru.mirea.project.service.VisitorService;
 import ru.mirea.project.repository.BookingRepository;
 import ru.mirea.project.repository.ExhibitionRepository;
 import ru.mirea.project.repository.VisitorRepository;
+import ru.mirea.project.util.ExcelExporter;
 
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -29,8 +31,8 @@ public class ConsoleUI {
 
     // СЕРВИСЫ
     private final ExhibitionService exhibitionService = new ExhibitionService(exhibitionRepository);
-    private final BookingService bookingService = new BookingService(bookingRepository, exhibitionService);
     private final VisitorService visitorService = new VisitorService(visitorRepository);
+    private final BookingService bookingService = new BookingService(bookingRepository, visitorService, exhibitionService);
 
     // КОНСТРУКТОР
     // чтобы только один объект мог быть
@@ -183,7 +185,17 @@ public class ConsoleUI {
                 case 5 -> sortingMenu();
                 case 6 -> statisticsMenu();
                 case 7 -> {
-                    print("экспортируем данные");
+                    try {
+                        Path exportFile = ExcelExporter.exportAll(
+                                visitorService.getAllVisitors(),
+                                exhibitionService.getAllExhibitions(),
+                                bookingService.getSortedBookings(1)
+                        );
+                        print("Данные экспортированы в файл:");
+                        print(exportFile.toString());
+                    } catch (IllegalStateException e) {
+                        print(e.getMessage());
+                    }
                 }
                 case 8 -> bdMenu();
                 case 0 -> {

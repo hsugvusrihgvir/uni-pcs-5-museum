@@ -13,13 +13,13 @@ import ru.mirea.project.repository.BookingRepository;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
-    //private final VisitorService visitorService; --- добавить потом
+    private final VisitorService visitorService;
     private final ExhibitionService exhibitionService;
 
     // сервис принимает репозиторий для работы с базой данных
-    public BookingService(BookingRepository bookingRepository, ExhibitionService exhibitionService) {
+    public BookingService(BookingRepository bookingRepository, VisitorService visitorService, ExhibitionService exhibitionService) {
         this.bookingRepository = bookingRepository;
-        //this.visitorService = visitorService; --- добавить потом
+        this.visitorService = visitorService;
         this.exhibitionService = exhibitionService; 
     }
 
@@ -33,15 +33,8 @@ public class BookingService {
             throw new BusinessException("Ошибка: Выставка с ID " + exhibitionId + " не найдена в системе!");
         }
 
-        // !!! потом здесь добавятся проверки через visitorRepository: !!!
-        /*
         if (!visitorService.existsById(visitorId)) {
             throw new BusinessException("Ошибка: Посетитель с ID " + visitorId + " не существует в системе!");
-        }
-            вместо:
-         */
-        if (visitorId <= 0) {
-            throw new BusinessException("Ошибка: Указан несуществующий ID посетителя!");
         }
 
         // Правило 2 (Логика дат работы выставки)
