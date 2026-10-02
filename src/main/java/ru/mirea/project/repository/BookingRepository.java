@@ -57,8 +57,8 @@ public class BookingRepository {
     public Booking save(Booking booking) {
         boolean isNew = (booking.getId() == 0);
         String sql = isNew 
-            ? "INSERT INTO booking (id_visitor, id_exhibition, visit_date, status, price) VALUES (?, ?, ?, ?, ?)"
-            : "UPDATE booking SET id_visitor = ?, id_exhibition = ?, visit_date = ?, status = ?, price = ? WHERE id = ?";
+            ? "INSERT INTO booking (id_visitor, id_exhibition, visit_date, status, price) VALUES (?, ?, ?, ?::booking_status, ?)"
+            : "UPDATE booking SET id_visitor = ?, id_exhibition = ?, visit_date = ?, status = ?::booking_status, price = ? WHERE id = ?";
             
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, isNew ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS)) {
@@ -87,7 +87,6 @@ public class BookingRepository {
                 }
             }
         } catch (SQLException e) {
-            LOGGER.log(Level.SEVERE, "Failed to save/update booking", e);
             throw new IllegalStateException("Не удалось сохранить бронирование в базе данных.", e);
         }
         return booking;

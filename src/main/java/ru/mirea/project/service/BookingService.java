@@ -115,6 +115,9 @@ public class BookingService {
     // 3.1
     public List<Booking> getBookingsByVisitorId(long visitorId) {
         if (visitorId <= 0) throw new BusinessException("Некорректный ID посетителя");
+        if (!visitorService.existsById(visitorId)){
+            throw new BusinessException("Ошибка: Посетитель с ID " + visitorId + " не существует в системе!");
+        }
         return bookingRepository.searchByVisitorId(visitorId);
     }
 
