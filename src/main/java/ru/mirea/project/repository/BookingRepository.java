@@ -181,7 +181,7 @@ public class BookingRepository {
         String sql = "SELECT b.id, b.id_visitor, b.id_exhibition, b.visit_date, b.status, b.price "
                    + "FROM booking b "
                    + "JOIN exhibitions e ON b.id_exhibition = e.id "
-                   + "WHERE e.title LIKE ?";
+                   + "WHERE e.title ILIKE ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
