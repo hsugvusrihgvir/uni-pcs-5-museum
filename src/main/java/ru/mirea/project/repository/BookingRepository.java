@@ -57,8 +57,8 @@ public class BookingRepository {
     public Booking save(Booking booking) {
         boolean isNew = (booking.getId() == 0);
         String sql = isNew 
-            ? "INSERT INTO booking (id_visitor, id_exhibition, visit_date, status, price) VALUES (?, ?, ?, ?, ?)"
-            : "UPDATE booking SET id_visitor = ?, id_exhibition = ?, visit_date = ?, status = ?, price = ? WHERE id = ?";
+            ? "INSERT INTO booking (id_visitor, id_exhibition, visit_date, status, price) VALUES (?, ?, ?, ?::booking_status, ?)"
+            : "UPDATE booking SET id_visitor = ?, id_exhibition = ?, visit_date = ?, status = ?::booking_status, price = ? WHERE id = ?";
             
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql, isNew ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS)) {
@@ -182,7 +182,7 @@ public class BookingRepository {
         String sql = "SELECT b.id, b.id_visitor, b.id_exhibition, b.visit_date, b.status, b.price "
                    + "FROM booking b "
                    + "JOIN exhibitions e ON b.id_exhibition = e.id "
-                   + "WHERE e.title LIKE ?";
+                   + "WHERE e.title ILIKE ?";
 
         try (Connection connection = DatabaseManager.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
