@@ -1,10 +1,10 @@
 package ru.mirea.project;
 
-import ru.mirea.project.ui.ConsoleUI;
+import javafx.application.Application;
+import ru.mirea.project.ui.MuseumApplication;
 
 public class Main {
     public static void main(String[] args) {
-        ConsoleUI ui = ConsoleUI.getInstance();
-        ui.start();
+        Application.launch(MuseumApplication.class, args);
     }
 }

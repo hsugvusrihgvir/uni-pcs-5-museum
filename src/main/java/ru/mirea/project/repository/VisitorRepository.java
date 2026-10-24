@@ -114,4 +114,39 @@ public class VisitorRepository {
             throw new IllegalStateException("Не удалось проверить существование посетителя в базе данных.", e);
         }
     }
+
+    // email в таблице уникальный, поэтому перед регистрацией проверяем его отдельно
+    public boolean existsByEmail(String email) {
+        String sql = "SELECT 1 FROM visitor WHERE LOWER(email) = LOWER(?) LIMIT 1";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, email);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to check existence of visitor by email", e);
+            throw new IllegalStateException("Не удалось проверить email посетителя.", e);
+        }
+    }
+
+    // количество посетителей для общей статистики
+    public long countAll() {
+        String sql = "SELECT COUNT(*) FROM visitor";
+
+        try (Connection connection = DatabaseManager.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            if (resultSet.next()) {
+                return resultSet.getLong(1);
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Failed to count visitors", e);
+            throw new IllegalStateException("Не удалось получить количество посетителей.", e);
+        }
+        return 0;
+    }
 }

@@ -7,6 +7,7 @@ import ru.mirea.project.exception.BusinessException;
 import ru.mirea.project.exception.EntityNotFoundException;
 import ru.mirea.project.model.Booking;
 import ru.mirea.project.model.BookingStatus;
+import ru.mirea.project.model.BookingStatistics;
 import ru.mirea.project.model.Exhibition;
 import ru.mirea.project.repository.BookingRepository;
 
@@ -26,6 +27,9 @@ public class BookingService {
     // 2.1: Создание бронирования
     // Правила 1, 2 и 5
     public Booking createBooking(long visitorId, long exhibitionId, LocalDate visitDate, Double inputPrice) {
+        if (visitDate == null) {
+            throw new BusinessException("Ошибка: Дата посещения не может быть пустой!");
+        }
         
         // Правило 1 (Существование сущности)
         
@@ -73,9 +77,20 @@ public class BookingService {
                 .orElseThrow(() -> new EntityNotFoundException("Ошибка: Бронирование с ID " + id + " не найдено в базе данных!"));
     }
 
+    public List<Booking> getAllBookings() {
+        return bookingRepository.findAll();
+    }
+
     //2.4: Изменение бронирования (статуса и цены)
     // Правила 3 и 4
     public Booking updateBooking(long id, BookingStatus newStatus, Double newPrice) {
+        if (newStatus == null) {
+            throw new BusinessException("Ошибка: Новый статус не выбран!");
+        }
+        if (newPrice != null && newPrice <= 0) {
+            throw new BusinessException("Ошибка: Цена билета должна быть положительным числом!");
+        }
+
         // достаем текущую запись, чтобы проверить её статус
         Booking booking = getBookingById(id);
         BookingStatus oldStatus = booking.getStatus();
@@ -146,17 +161,24 @@ public class BookingService {
 
     // Пункт 6: Сборка статистики
     public void printStatistics() {
-        // long totalCustomers = visitorService.getTotalVisitorsCount(); --- добавить потом
-        long totalBookings = bookingRepository.countAll();
-        long completed = bookingRepository.countByStatus(BookingStatus.COMPLETED);
-        long cancelled = bookingRepository.countByStatus(BookingStatus.CANCELLED);
-        double money = bookingRepository.sumPriceForCompleted();
+        BookingStatistics statistics = getStatistics();
 
         System.out.println("=== Статистика по бронированиям ===");
-        System.out.println("Всего бронирований: " + totalBookings);
-        System.out.println("Завершённых (COMPLETED): " + completed);
-        System.out.println("Отменённых (CANCELLED): " + cancelled);
-        System.out.println("Выручка по завершённым: " + money);
+        System.out.println("Всего бронирований: " + statistics.bookings());
+        System.out.println("Завершённых (COMPLETED): " + statistics.completed());
+        System.out.println("Отменённых (CANCELLED): " + statistics.cancelled());
+        System.out.println("Выручка по завершённым: " + statistics.completedRevenue());
         System.out.println("==================================");
+    }
+
+    // данные возвращаются объектом, чтобы их мог показать не только консольный интерфейс
+    public BookingStatistics getStatistics() {
+        return new BookingStatistics(
+                visitorService.getTotalVisitorsCount(),
+                bookingRepository.countAll(),
+                bookingRepository.countByStatus(BookingStatus.COMPLETED),
+                bookingRepository.countByStatus(BookingStatus.CANCELLED),
+                bookingRepository.sumPriceForCompleted()
+        );
     }
 }

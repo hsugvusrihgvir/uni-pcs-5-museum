@@ -35,13 +35,33 @@ public class VisitorService {
         if (password_hash == null || password_hash.trim().isEmpty()) {
             throw new BusinessException("Хеш пароля не может быть пустым!");
         }
+        if (password_hash.length() > 255) {
+            throw new BusinessException("Хеш пароля не должен быть длиннее 255 символов!");
+        }
+        if (name.trim().length() > 255
+                || last_name.trim().length() > 255
+                || (patronymic != null && patronymic.trim().length() > 255)) {
+            throw new BusinessException("ФИО не должно быть длиннее 255 символов!");
+        }
+        if (birth_date != null && birth_date.isAfter(LocalDate.now())) {
+            throw new BusinessException("Дата рождения не может быть в будущем!");
+        }
+
+        String normalizedEmail = email.trim();
+        if (normalizedEmail.length() > 255
+                || !normalizedEmail.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            throw new BusinessException("Введите корректный email длиной не более 255 символов!");
+        }
+        if (visitorRepository.existsByEmail(normalizedEmail)) {
+            throw new BusinessException("Посетитель с таким email уже существует!");
+        }
 
         Visitor visitor = new Visitor();
-        visitor.setName(name);
-        visitor.setLastName(last_name);
-        visitor.setPatronymic(patronymic);
+        visitor.setName(name.trim());
+        visitor.setLastName(last_name.trim());
+        visitor.setPatronymic(patronymic == null || patronymic.trim().isEmpty() ? null : patronymic.trim());
         visitor.setBirthDate(birth_date);
-        visitor.setEmail(email);
+        visitor.setEmail(normalizedEmail);
         visitor.setPasswordHash(password_hash);
 
         return visitorRepository.save(visitor);
@@ -50,6 +70,10 @@ public class VisitorService {
     // просмотр всех пользователей 1.2
     public List<Visitor> getAllVisitors() {
         return visitorRepository.findAll();
+    }
+
+    public long getTotalVisitorsCount() {
+        return visitorRepository.countAll();
     }
 
     // проверить существование пользователя по id

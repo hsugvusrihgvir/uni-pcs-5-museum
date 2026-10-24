@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="ru.mirea.project.ui.MainController"
+            styleClass="app-root">
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="14" styleClass="header">
+            <padding>
+                <Insets top="15" right="20" bottom="15" left="20"/>
+            </padding>
+            <ImageView fitWidth="58" fitHeight="58" preserveRatio="true" smooth="true">
+                <image>
+                    <Image url="@museum-logo.png"/>
+                </image>
+            </ImageView>
+            <VBox spacing="2">
+                <Label text="Музей" styleClass="header-title"/>
+                <Label text="Система бронирования посещений" styleClass="header-subtitle"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Обновить данные" onAction="#handleRefresh"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <Tab text="Бронирования">
+                    <BorderPane>
+                        <top>
+                            <VBox spacing="10" styleClass="content-toolbar">
+                                <HBox alignment="CENTER_LEFT" spacing="8">
+                                    <Button text="Добавить" onAction="#handleAddBooking" styleClass="primary-button"/>
+                                    <Button fx:id="editBookingButton" text="Изменить" onAction="#handleEditBooking"/>
+                                    <Button fx:id="deleteBookingButton" text="Удалить" onAction="#handleDeleteBooking"
+                                            styleClass="danger-button"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Button text="Экспорт текущего списка" onAction="#handleExport"/>
+                                </HBox>
+
+                                <HBox alignment="CENTER_LEFT" spacing="8">
+                                    <TextField fx:id="searchField"
+                                               promptText="ID, ФИО, email, выставка, статус или дата"
+                                               prefWidth="260" HBox.hgrow="ALWAYS"/>
+                                    <ComboBox fx:id="statusFilterComboBox" prefWidth="145"/>
+                                    <DatePicker fx:id="startDateFilter" promptText="Дата от" prefWidth="120"/>
+                                    <DatePicker fx:id="endDateFilter" promptText="Дата до" prefWidth="120"/>
+                                    <Button text="Применить" onAction="#handleApplyFilters" styleClass="primary-button"/>
+                                    <Button text="Сбросить" onAction="#handleClearFilters"/>
+                                </HBox>
+
+                                <HBox alignment="CENTER_LEFT" spacing="8">
+                                    <Label text="Сортировка:" styleClass="muted"/>
+                                    <Button text="По дате ↓" onAction="#handleSortByDate"/>
+                                    <Button text="По цене ↓" onAction="#handleSortByPrice"/>
+                                </HBox>
+                            </VBox>
+                        </top>
+                        <center>
+                            <TableView fx:id="bookingTable">
+                                <columns>
+                                    <TableColumn fx:id="bookingIdColumn" text="ID" prefWidth="70"/>
+                                    <TableColumn fx:id="bookingVisitorColumn" text="Посетитель" prefWidth="240"/>
+                                    <TableColumn fx:id="bookingExhibitionColumn" text="Выставка" prefWidth="230"/>
+                                    <TableColumn fx:id="bookingDateColumn" text="Дата посещения" prefWidth="130"/>
+                                    <TableColumn fx:id="bookingStatusColumn" text="Статус" prefWidth="120"/>
+                                    <TableColumn fx:id="bookingPriceColumn" text="Цена" prefWidth="110"/>
+                                </columns>
+                                <BorderPane.margin>
+                                    <Insets right="16" bottom="16" left="16"/>
+                                </BorderPane.margin>
+                            </TableView>
+                        </center>
+                    </BorderPane>
+                </Tab>
+
+                <Tab text="Посетители">
+                    <BorderPane>
+                        <top>
+                            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="content-toolbar">
+                                <Button text="Создать посетителя" onAction="#handleAddVisitor" styleClass="primary-button"/>
+                                <Button text="Обновить" onAction="#handleRefresh"/>
+                            </HBox>
+                        </top>
+                        <center>
+                            <TableView fx:id="visitorTable">
+                                <columns>
+                                    <TableColumn fx:id="visitorIdColumn" text="ID" prefWidth="80"/>
+                                    <TableColumn fx:id="visitorNameColumn" text="ФИО" prefWidth="330"/>
+                                    <TableColumn fx:id="visitorBirthDateColumn" text="Дата рождения" prefWidth="160"/>
+                                    <TableColumn fx:id="visitorEmailColumn" text="Email" prefWidth="280"/>
+                                </columns>
+                                <BorderPane.margin>
+                                    <Insets right="16" bottom="16" left="16"/>
+                                </BorderPane.margin>
+                            </TableView>
+                        </center>
+                    </BorderPane>
+                </Tab>
+
+                <Tab text="Выставки">
+                    <BorderPane>
+                        <top>
+                            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="content-toolbar">
+                                <Button text="Обновить" onAction="#handleRefresh"/>
+                                <Label text="Выставка выбирается из этого списка при создании бронирования."
+                                       styleClass="muted"/>
+                            </HBox>
+                        </top>
+                        <center>
+                            <TableView fx:id="exhibitionTable">
+                                <columns>
+                                    <TableColumn fx:id="exhibitionIdColumn" text="ID" prefWidth="80"/>
+                                    <TableColumn fx:id="exhibitionTitleColumn" text="Название" prefWidth="360"/>
+                                    <TableColumn fx:id="exhibitionStartColumn" text="Дата начала" prefWidth="150"/>
+                                    <TableColumn fx:id="exhibitionEndColumn" text="Дата окончания" prefWidth="150"/>
+                                    <TableColumn fx:id="exhibitionHallColumn" text="Зал" prefWidth="90"/>
+                                </columns>
+                                <BorderPane.margin>
+                                    <Insets right="16" bottom="16" left="16"/>
+                                </BorderPane.margin>
+                            </TableView>
+                        </center>
+                    </BorderPane>
+                </Tab>
+
+                <Tab text="Статистика">
+                    <VBox spacing="18" styleClass="statistics-pane">
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="Статистика системы" styleClass="section-title"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Обновить" onAction="#handleRefresh"/>
+                        </HBox>
+                        <FlowPane hgap="16" vgap="16" prefWrapLength="900">
+                            <VBox spacing="6" styleClass="metric-card">
+                                <Label text="Всего посетителей" styleClass="muted"/>
+                                <Label fx:id="visitorsCountLabel" text="0" styleClass="metric-value"/>
+                            </VBox>
+                            <VBox spacing="6" styleClass="metric-card">
+                                <Label text="Всего бронирований" styleClass="muted"/>
+                                <Label fx:id="bookingsCountLabel" text="0" styleClass="metric-value"/>
+                            </VBox>
+                            <VBox spacing="6" styleClass="metric-card">
+                                <Label text="Завершено" styleClass="muted"/>
+                                <Label fx:id="completedCountLabel" text="0" styleClass="metric-value"/>
+                            </VBox>
+                            <VBox spacing="6" styleClass="metric-card">
+                                <Label text="Отменено" styleClass="muted"/>
+                                <Label fx:id="cancelledCountLabel" text="0" styleClass="metric-value"/>
+                            </VBox>
+                            <VBox spacing="6" styleClass="metric-card metric-card-wide">
+                                <Label text="Выручка завершённых бронирований" styleClass="muted"/>
+                                <Label fx:id="revenueLabel" text="0.00 ₽" styleClass="metric-value"/>
+                            </VBox>
+                        </FlowPane>
+                    </VBox>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+
+    <bottom>
+        <HBox styleClass="status-bar">
+            <Label fx:id="statusLabel" text="Загрузка данных..."/>
+        </HBox>
+    </bottom>
+</BorderPane>

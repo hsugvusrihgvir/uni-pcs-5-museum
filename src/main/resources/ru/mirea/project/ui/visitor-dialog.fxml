@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns="http://javafx.com/javafx/21"
+          xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="ru.mirea.project.ui.VisitorDialogController"
+          hgap="12" vgap="12" styleClass="form-grid">
+    <padding>
+        <Insets top="14" right="14" bottom="14" left="14"/>
+    </padding>
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="135"/>
+        <ColumnConstraints hgrow="ALWAYS" minWidth="280"/>
+    </columnConstraints>
+
+    <Label text="Фамилия:" GridPane.rowIndex="0"/>
+    <TextField fx:id="lastNameField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+    <Label text="Имя:" GridPane.rowIndex="1"/>
+    <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+    <Label text="Отчество:" GridPane.rowIndex="2"/>
+    <TextField fx:id="patronymicField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+    <Label text="Дата рождения:" GridPane.rowIndex="3"/>
+    <DatePicker fx:id="birthDatePicker" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+    <Label text="Email:" GridPane.rowIndex="4"/>
+    <TextField fx:id="emailField" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
+    <Label text="Хеш пароля:" GridPane.rowIndex="5"/>
+    <PasswordField fx:id="passwordHashField" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+
+    <Label fx:id="errorLabel" wrapText="true" styleClass="error-label"
+           GridPane.columnIndex="0" GridPane.rowIndex="6" GridPane.columnSpan="2"/>
+</GridPane>

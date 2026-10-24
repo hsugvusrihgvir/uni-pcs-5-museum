@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns="http://javafx.com/javafx/21"
+          xmlns:fx="http://javafx.com/fxml/1"
+          fx:controller="ru.mirea.project.ui.BookingDialogController"
+          hgap="12" vgap="12" styleClass="form-grid">
+    <padding>
+        <Insets top="14" right="14" bottom="14" left="14"/>
+    </padding>
+
+    <columnConstraints>
+        <ColumnConstraints minWidth="145"/>
+        <ColumnConstraints hgrow="ALWAYS" minWidth="300"/>
+    </columnConstraints>
+
+    <Label text="Посетитель:" GridPane.rowIndex="0"/>
+    <ComboBox fx:id="visitorComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+    <Label text="Выставка:" GridPane.rowIndex="1"/>
+    <ComboBox fx:id="exhibitionComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+    <Label text="Дата посещения:" GridPane.rowIndex="2"/>
+    <DatePicker fx:id="visitDatePicker" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+    <Label text="Статус:" GridPane.rowIndex="3"/>
+    <ComboBox fx:id="statusComboBox" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+    <Label text="Цена:" GridPane.rowIndex="4"/>
+    <TextField fx:id="priceField" promptText="Оставьте пустым, если бронирование не оплачено"
+               GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+
+    <Label fx:id="statusHintLabel" wrapText="true" styleClass="muted"
+           GridPane.columnIndex="0" GridPane.rowIndex="5" GridPane.columnSpan="2"/>
+    <Label fx:id="errorLabel" wrapText="true" styleClass="error-label"
+           GridPane.columnIndex="0" GridPane.rowIndex="6" GridPane.columnSpan="2"/>
+</GridPane>

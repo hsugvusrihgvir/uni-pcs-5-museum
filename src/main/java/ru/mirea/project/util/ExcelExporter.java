@@ -63,6 +63,21 @@ public final class ExcelExporter {
         }
     }
 
+    // путь выбирается в JavaFX через FileChooser, поэтому здесь он уже готовый
+    public static Path exportBookings(List<Booking> bookings, Path exportFile) {
+        try (Workbook workbook = new XSSFWorkbook();
+             OutputStream outputStream = Files.newOutputStream(exportFile)) {
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
+
+            createBookingsSheet(workbook, bookings, headerStyle, dateStyle);
+            workbook.write(outputStream);
+            return exportFile.toAbsolutePath();
+        } catch (IOException e) {
+            throw new IllegalStateException("Не удалось экспортировать бронирования в Excel.", e);
+        }
+    }
+
     private static void createVisitorsSheet(
             Workbook workbook,
             List<Visitor> visitors,
