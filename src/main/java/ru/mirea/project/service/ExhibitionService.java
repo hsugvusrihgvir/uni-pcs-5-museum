@@ -24,8 +24,11 @@ public class ExhibitionService {
 
     // Получение по ID 
     public Exhibition getExhibitionById(long id) {
-        return exhibitionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Выставка с ID " + id + " не найдена!"));
+        Exhibition exhibition = exhibitionRepository.findById(id).orElse(null);
+        if (exhibition == null) {
+            throw new EntityNotFoundException("Выставка с ID " + id + " не найдена!");
+        }
+        return exhibition;
     }
 
     public List<Exhibition> getAllExhibitions() {

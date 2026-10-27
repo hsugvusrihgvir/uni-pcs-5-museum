@@ -38,7 +38,7 @@ public class MuseumApplication extends Application {
 
         Scene scene = new Scene(root, 1280, 760);
         scene.getStylesheets().add(
-                MuseumApplication.class.getResource("/ru/mirea/project/ui/app.css").toExternalForm()
+                MuseumApplication.class.getResource("/ru/mirea/project/ui/app.css").toExternalForm() // превращает ресурс в строку
         );
 
         stage.setTitle("Музей — система бронирования");

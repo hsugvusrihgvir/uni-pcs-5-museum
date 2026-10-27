@@ -1,13 +1,14 @@
 package ru.mirea.project.ui;
 
-import javafx.beans.property.ReadOnlyLongWrapper;
-import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
+import javafx.event.EventHandler;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -16,9 +17,12 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
+import javafx.util.Callback;
 import ru.mirea.project.model.Booking;
 import ru.mirea.project.model.BookingStatistics;
 import ru.mirea.project.model.BookingStatus;
@@ -38,11 +42,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 public class MainController {
 
     private static final String ALL_STATUSES = "Все статусы";
 
+    // связывают поля контроллера с элементами разметки
     @FXML
     private TextField searchField;
     @FXML
@@ -107,50 +114,75 @@ public class MainController {
     @FXML
     private Label statusLabel;
 
+    // дают доступ к данным и проверкам
     private BookingService bookingService;
     private VisitorService visitorService;
     private ExhibitionService exhibitionService;
 
+    // хранят данные для таблиц
     private final ObservableList<Booking> bookingItems = FXCollections.observableArrayList();
     private final ObservableList<Visitor> visitorItems = FXCollections.observableArrayList();
     private final ObservableList<Exhibition> exhibitionItems = FXCollections.observableArrayList();
+    // находят посетителя или выставку по номеру
     private final Map<Long, Visitor> visitorsById = new HashMap<>();
     private final Map<Long, Exhibition> exhibitionsById = new HashMap<>();
 
+    // хранит бронирования после поиска и фильтрации
     private FilteredList<Booking> filteredBookings;
 
+    // настраивает таблицы и действия после загрузки разметки
     @FXML
     private void initialize() {
         configureBookingTable();
         configureVisitorTable();
         configureExhibitionTable();
 
+        // добавляет в список все статусы
         statusFilterComboBox.getItems().add(ALL_STATUSES);
         for (BookingStatus status : BookingStatus.values()) {
             statusFilterComboBox.getItems().add(status.name());
         }
         statusFilterComboBox.setValue(ALL_STATUSES);
 
-        // FilteredList отвечает за поиск и фильтры, а SortedList сохраняет сортировку TableView
-        filteredBookings = new FilteredList<>(bookingItems, booking -> true);
+        // оставляет только подходящие бронирования
+        filteredBookings = new FilteredList<>(bookingItems);
+        // сортирует бронирования после фильтрации
         SortedList<Booking> sortedBookings = new SortedList<>(filteredBookings);
+        // связывает сортировку таблицы со списком
         sortedBookings.comparatorProperty().bind(bookingTable.comparatorProperty());
         bookingTable.setItems(sortedBookings);
 
         visitorTable.setItems(visitorItems);
         exhibitionTable.setItems(exhibitionItems);
 
-        searchField.textProperty().addListener((observable, oldValue, newValue) -> applyFilters(false));
+        // обновляет поиск при вводе текста
+        searchField.textProperty().addListener(new ChangeListener<String>() {
+            @Override
+            public void changed(ObservableValue<? extends String> observable, String oldValue, String newValue) {
+                applyFilters(false);
+            }
+        });
+        // включает кнопки изменения и удаления при выборе строки
         bookingTable.getSelectionModel().selectedItemProperty()
-                .addListener((observable, oldValue, newValue) -> updateBookingButtons(newValue));
-        bookingTable.setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                handleEditBooking();
+                .addListener(new ChangeListener<Booking>() {
+                    @Override
+                    public void changed(ObservableValue<? extends Booking> observable, Booking oldValue, Booking newValue) {
+                        updateBookingButtons(newValue);
+                    }
+                });
+        // открывает изменение бронирования двойным щелчком по строке
+        bookingTable.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent event) {
+                if (event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
+                    handleEditBooking();
+                }
             }
         });
         updateBookingButtons(null);
     }
 
+    // сохраняет сервисы и загружает данные
     public void setServices(
             BookingService bookingService,
             VisitorService visitorService,
@@ -162,58 +194,71 @@ public class MainController {
         refreshAll();
     }
 
+    // задаёт содержимое столбцов бронирований
     private void configureBookingTable() {
         bookingTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        bookingIdColumn.setCellValueFactory(data -> new ReadOnlyLongWrapper(data.getValue().getId()));
-        bookingVisitorColumn.setCellValueFactory(data ->
-                new ReadOnlyStringWrapper(visitorName(data.getValue().getVisitorId()))
-        );
-        bookingExhibitionColumn.setCellValueFactory(data ->
-                new ReadOnlyStringWrapper(exhibitionTitle(data.getValue().getExhibitionId()))
-        );
-        bookingDateColumn.setCellValueFactory(data ->
-                new ReadOnlyObjectWrapper<>(data.getValue().getVisitDate())
-        );
-        bookingStatusColumn.setCellValueFactory(data ->
-                new ReadOnlyObjectWrapper<>(data.getValue().getStatus())
-        );
-        bookingPriceColumn.setCellValueFactory(data ->
-                new ReadOnlyObjectWrapper<>(data.getValue().getPrice())
-        );
-        bookingPriceColumn.setCellFactory(column -> new TableCell<>() {
+        bookingIdColumn.setCellValueFactory(new PropertyValueFactory<Booking, Number>("id"));
+        // находит имя посетителя по его номеру
+        bookingVisitorColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Booking, String>, ObservableValue<String>>() {
             @Override
-            protected void updateItem(Double price, boolean empty) {
-                super.updateItem(price, empty);
-                setText(empty || price == null ? "—" : String.format(Locale.US, "%.2f ₽", price));
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<Booking, String> data) {
+                return new ReadOnlyStringWrapper(visitorName(data.getValue().getVisitorId()));
+            }
+        });
+        // находит название выставки по её номеру
+        bookingExhibitionColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Booking, String>, ObservableValue<String>>() {
+            @Override
+            public ObservableValue<String> call(TableColumn.CellDataFeatures<Booking, String> data) {
+                return new ReadOnlyStringWrapper(exhibitionTitle(data.getValue().getExhibitionId()));
+            }
+        });
+        bookingDateColumn.setCellValueFactory(new PropertyValueFactory<Booking, LocalDate>("visitDate"));
+        bookingStatusColumn.setCellValueFactory(new PropertyValueFactory<Booking, BookingStatus>("status"));
+        bookingPriceColumn.setCellValueFactory(new PropertyValueFactory<Booking, Double>("price"));
+        // показывает цену с двумя знаками после точки или ставит прочерк
+        bookingPriceColumn.setCellFactory(new Callback<TableColumn<Booking, Double>, TableCell<Booking, Double>>() {
+            @Override
+            public TableCell<Booking, Double> call(TableColumn<Booking, Double> column) {
+                return new TableCell<Booking, Double>() {
+                    @Override
+                    protected void updateItem(Double price, boolean empty) {
+                        super.updateItem(price, empty);
+                        setText(empty || price == null ? "—" : String.format(Locale.US, "%.2f ₽", price));
+                    }
+                };
             }
         });
         bookingTable.setPlaceholder(new Label("Бронирования не найдены"));
     }
 
+    // задаёт содержимое таблицы посетителей
     private void configureVisitorTable() {
         visitorTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        visitorIdColumn.setCellValueFactory(data -> new ReadOnlyLongWrapper(data.getValue().getId()));
-        visitorNameColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getFullName()));
-        visitorBirthDateColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getBirthDate()));
-        visitorEmailColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getEmail()));
+        visitorIdColumn.setCellValueFactory(new PropertyValueFactory<Visitor, Number>("id"));
+        visitorNameColumn.setCellValueFactory(new PropertyValueFactory<Visitor, String>("fullName"));
+        visitorBirthDateColumn.setCellValueFactory(new PropertyValueFactory<Visitor, LocalDate>("birthDate"));
+        visitorEmailColumn.setCellValueFactory(new PropertyValueFactory<Visitor, String>("email"));
         visitorTable.setPlaceholder(new Label("Посетители не найдены"));
     }
 
+    // задаёт содержимое таблицы выставок
     private void configureExhibitionTable() {
         exhibitionTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
-        exhibitionIdColumn.setCellValueFactory(data -> new ReadOnlyLongWrapper(data.getValue().getId()));
-        exhibitionTitleColumn.setCellValueFactory(data -> new ReadOnlyStringWrapper(data.getValue().getTitle()));
-        exhibitionStartColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getStartDate()));
-        exhibitionEndColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getEndDate()));
-        exhibitionHallColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().getHallNumber()));
+        exhibitionIdColumn.setCellValueFactory(new PropertyValueFactory<Exhibition, Number>("id"));
+        exhibitionTitleColumn.setCellValueFactory(new PropertyValueFactory<Exhibition, String>("title"));
+        exhibitionStartColumn.setCellValueFactory(new PropertyValueFactory<Exhibition, LocalDate>("startDate"));
+        exhibitionEndColumn.setCellValueFactory(new PropertyValueFactory<Exhibition, LocalDate>("endDate"));
+        exhibitionHallColumn.setCellValueFactory(new PropertyValueFactory<Exhibition, Number>("hallNumber"));
         exhibitionTable.setPlaceholder(new Label("Выставки не найдены"));
     }
 
+    // обновляет данные после нажатия кнопки
     @FXML
     private void handleRefresh() {
         refreshAll();
     }
 
+    // открывает форму и создаёт бронирование после сохранения
     @FXML
     private void handleAddBooking() {
         if (visitorItems.isEmpty() || exhibitionItems.isEmpty()) {
@@ -222,53 +267,61 @@ public class MainController {
         }
 
         try {
-            BookingDialogController.show(owner(), visitorItems, exhibitionItems, null)
-                    .ifPresent(input -> {
-                        try {
-                            bookingService.createBooking(
-                                    input.visitor().getId(),
-                                    input.exhibition().getId(),
-                                    input.visitDate(),
-                                    input.price()
-                            );
-                            refreshAll();
-                            statusLabel.setText("Бронирование создано.");
-                        } catch (RuntimeException e) {
-                            showError(e);
-                        }
-                    });
+            Optional<BookingDialogController.BookingInput> result =
+                    BookingDialogController.show(owner(), visitorItems, exhibitionItems, null);
+            // пропускает создание при закрытии формы без сохранения
+            if (result.isPresent()) {
+                BookingDialogController.BookingInput input = result.get();
+                try {
+                    bookingService.createBooking(
+                            input.visitor().getId(),
+                            input.exhibition().getId(),
+                            input.visitDate(),
+                            input.price()
+                    );
+                    refreshAll();
+                    statusLabel.setText("Бронирование создано.");
+                } catch (RuntimeException e) {
+                    showError(e);
+                }
+            }
         } catch (RuntimeException e) {
             showError(e);
         }
     }
 
+    // меняет статус и цену выбранного бронирования
     @FXML
     private void handleEditBooking() {
         Booking selected = bookingTable.getSelectionModel().getSelectedItem();
         if (selected == null) {
             return;
         }
+        // запрещает изменение завершённого или отменённого бронирования
         if (isFinalStatus(selected)) {
             UiDialogs.error(owner(), "Бронирование в финальном статусе нельзя изменить.");
             return;
         }
 
         try {
-            BookingDialogController.show(owner(), visitorItems, exhibitionItems, selected)
-                    .ifPresent(input -> {
-                        try {
-                            bookingService.updateBooking(selected.getId(), input.status(), input.price());
-                            refreshAll();
-                            statusLabel.setText("Бронирование изменено.");
-                        } catch (RuntimeException e) {
-                            showError(e);
-                        }
-                    });
+            Optional<BookingDialogController.BookingInput> result =
+                    BookingDialogController.show(owner(), visitorItems, exhibitionItems, selected);
+            if (result.isPresent()) {
+                BookingDialogController.BookingInput input = result.get();
+                try {
+                    bookingService.updateBooking(selected.getId(), input.status(), input.price());
+                    refreshAll();
+                    statusLabel.setText("Бронирование изменено.");
+                } catch (RuntimeException e) {
+                    showError(e);
+                }
+            }
         } catch (RuntimeException e) {
             showError(e);
         }
     }
 
+    // удаляет выбранное бронирование после подтверждения
     @FXML
     private void handleDeleteBooking() {
         Booking selected = bookingTable.getSelectionModel().getSelectedItem();
@@ -288,10 +341,13 @@ public class MainController {
         }
     }
 
+    // открывает форму и добавляет нового посетителя
     @FXML
     private void handleAddVisitor() {
         try {
-            VisitorDialogController.show(owner()).ifPresent(input -> {
+            Optional<VisitorDialogController.VisitorInput> result = VisitorDialogController.show(owner());
+            if (result.isPresent()) {
+                VisitorDialogController.VisitorInput input = result.get();
                 try {
                     visitorService.createVisitor(
                             input.name(),
@@ -306,17 +362,19 @@ public class MainController {
                 } catch (RuntimeException e) {
                     showError(e);
                 }
-            });
+            }
         } catch (RuntimeException e) {
             showError(e);
         }
     }
 
+    // применяет выбранные условия поиска
     @FXML
     private void handleApplyFilters() {
         applyFilters(true);
     }
 
+    // сбрасывает условия поиска и снова показывает список
     @FXML
     private void handleClearFilters() {
         searchField.clear();
@@ -327,6 +385,7 @@ public class MainController {
         statusLabel.setText("Фильтры сброшены.");
     }
 
+    // показывает сначала бронирования с поздней датой
     @FXML
     private void handleSortByDate() {
         bookingDateColumn.setSortType(TableColumn.SortType.DESCENDING);
@@ -335,6 +394,7 @@ public class MainController {
         statusLabel.setText("Сортировка: сначала новые даты.");
     }
 
+    // показывает сначала дорогие бронирования
     @FXML
     private void handleSortByPrice() {
         bookingPriceColumn.setSortType(TableColumn.SortType.DESCENDING);
@@ -343,6 +403,7 @@ public class MainController {
         statusLabel.setText("Сортировка: сначала дорогие бронирования.");
     }
 
+    // сохраняет показанные бронирования в файл с таблицей
     @FXML
     private void handleExport() {
         if (bookingTable.getItems().isEmpty()) {
@@ -350,6 +411,7 @@ public class MainController {
             return;
         }
 
+        // открывает выбор места и имени файла
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Сохранить бронирования");
         chooser.setInitialFileName("museum_bookings_"
@@ -361,6 +423,7 @@ public class MainController {
             return;
         }
 
+        // добавляет расширение при его отсутствии
         File exportFile = selectedFile.getName().toLowerCase(Locale.ROOT).endsWith(".xlsx")
                 ? selectedFile
                 : new File(selectedFile.getParentFile(), selectedFile.getName() + ".xlsx");
@@ -373,13 +436,14 @@ public class MainController {
         }
     }
 
+    // загружает данные и обновляет экран
     private void refreshAll() {
         if (bookingService == null || visitorService == null || exhibitionService == null) {
             return;
         }
 
         try {
-            // сначала получаем все списки, чтобы таблицы не остались обновлёнными наполовину
+            // получает все данные до обновления таблиц
             List<Visitor> visitors = visitorService.getAllVisitors();
             List<Exhibition> exhibitions = exhibitionService.getAllExhibitions();
             List<Booking> bookings = bookingService.getAllBookings();
@@ -388,12 +452,17 @@ public class MainController {
             exhibitionItems.setAll(exhibitions);
             bookingItems.setAll(bookings);
 
+            // обновляет поиск по номерам
             visitorsById.clear();
-            visitors.forEach(visitor -> visitorsById.put(visitor.getId(), visitor));
+            for (Visitor visitor : visitors) {
+                visitorsById.put(visitor.getId(), visitor);
+            }
             exhibitionsById.clear();
-            exhibitions.forEach(exhibition -> exhibitionsById.put(exhibition.getId(), exhibition));
+            for (Exhibition exhibition : exhibitions) {
+                exhibitionsById.put(exhibition.getId(), exhibition);
+            }
 
-            // имена связанных объектов зависят от словарей, поэтому таблицу нужно перерисовать
+            // перерисовывает таблицу после обновления имён и названий
             bookingTable.refresh();
             applyFilters(false);
             refreshStatistics();
@@ -403,6 +472,7 @@ public class MainController {
         }
     }
 
+    // показывает новые числа в блоке статистики
     private void refreshStatistics() {
         BookingStatistics statistics = bookingService.getStatistics();
         visitorsCountLabel.setText(Long.toString(statistics.visitors()));
@@ -412,6 +482,7 @@ public class MainController {
         revenueLabel.setText(String.format(Locale.US, "%.2f ₽", statistics.completedRevenue()));
     }
 
+    // применяет поиск и фильтры к бронированиям
     private void applyFilters(boolean showValidationError) {
         if (filteredBookings == null) {
             return;
@@ -419,6 +490,7 @@ public class MainController {
 
         LocalDate start = startDateFilter.getValue();
         LocalDate end = endDateFilter.getValue();
+        // сохраняет текущий список при неверном порядке дат
         if (start != null && end != null && start.isAfter(end)) {
             if (showValidationError) {
                 UiDialogs.error(owner(), "Дата начала фильтра не может быть позже даты окончания.");
@@ -431,19 +503,24 @@ public class MainController {
                 : searchField.getText().trim().toLowerCase(Locale.ROOT);
         String selectedStatus = statusFilterComboBox.getValue();
 
-        filteredBookings.setPredicate(booking -> {
-            boolean matchesSearch = query.isEmpty() || matchesSearch(booking, query);
-            boolean matchesStatus = selectedStatus == null
-                    || ALL_STATUSES.equals(selectedStatus)
-                    || booking.getStatus().name().equals(selectedStatus);
-            boolean matchesStart = start == null || !booking.getVisitDate().isBefore(start);
-            boolean matchesEnd = end == null || !booking.getVisitDate().isAfter(end);
-            return matchesSearch && matchesStatus && matchesStart && matchesEnd;
+        // проверяет выбранные условия для каждой строки
+        filteredBookings.setPredicate(new Predicate<Booking>() {
+            @Override
+            public boolean test(Booking booking) {
+                boolean matchesSearch = query.isEmpty() || matchesSearch(booking, query);
+                boolean matchesStatus = selectedStatus == null
+                        || ALL_STATUSES.equals(selectedStatus)
+                        || booking.getStatus().name().equals(selectedStatus);
+                boolean matchesStart = start == null || !booking.getVisitDate().isBefore(start);
+                boolean matchesEnd = end == null || !booking.getVisitDate().isAfter(end);
+                return matchesSearch && matchesStatus && matchesStart && matchesEnd;
+            }
         });
 
         statusLabel.setText("Показано бронирований: " + filteredBookings.size() + ".");
     }
 
+    // ищет текст в данных бронирования и связанных записях
     private boolean matchesSearch(Booking booking, String query) {
         Visitor visitor = visitorsById.get(booking.getVisitorId());
         Exhibition exhibition = exhibitionsById.get(booking.getExhibitionId());
@@ -461,32 +538,38 @@ public class MainController {
                 || booking.getVisitDate().toString().contains(query);
     }
 
+    // отключает кнопки изменения и удаления без выбранной строки
     private void updateBookingButtons(Booking selected) {
         boolean nothingSelected = selected == null;
         editBookingButton.setDisable(nothingSelected);
         deleteBookingButton.setDisable(nothingSelected);
     }
 
+    // проверяет завершение или отмену бронирования
     private boolean isFinalStatus(Booking booking) {
         return booking != null
                 && (booking.getStatus() == BookingStatus.COMPLETED
                 || booking.getStatus() == BookingStatus.CANCELLED);
     }
 
+    // показывает имя посетителя или его номер
     private String visitorName(long id) {
         Visitor visitor = visitorsById.get(id);
         return visitor == null ? "ID " + id : visitor.getFullName();
     }
 
+    // показывает название выставки или её номер
     private String exhibitionTitle(long id) {
         Exhibition exhibition = exhibitionsById.get(id);
         return exhibition == null ? "ID " + id : exhibition.getTitle();
     }
 
+    // получает текущее окно для форм и сообщений
     private Window owner() {
         return bookingTable.getScene() == null ? null : bookingTable.getScene().getWindow();
     }
 
+    // показывает ошибку и отмечает неудачную операцию
     private void showError(RuntimeException error) {
         String message = error.getMessage();
         if (message == null || message.isBlank()) {

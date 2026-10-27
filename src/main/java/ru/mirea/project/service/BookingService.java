@@ -73,8 +73,11 @@ public class BookingService {
     // 2.3: Получение бронирования по ID
     public Booking getBookingById(long id) {
         // метод findById из репозитория
-        return bookingRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Ошибка: Бронирование с ID " + id + " не найдено в базе данных!"));
+        Booking booking = bookingRepository.findById(id).orElse(null);
+        if (booking == null) {
+            throw new EntityNotFoundException("Ошибка: Бронирование с ID " + id + " не найдено в базе данных!");
+        }
+        return booking;
     }
 
     public List<Booking> getAllBookings() {
